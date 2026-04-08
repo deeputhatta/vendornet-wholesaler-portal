@@ -1,30 +1,26 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 
-const STATUS_COLORS = {
-  pending: { bg: '#FAEEDA', text: '#633806' },
-  accepted: { bg: '#EAF3DE', text: '#27500A' },
-  packing: { bg: '#E6F1FB', text: '#0C447C' },
-  dispatched: { bg: '#E6F1FB', text: '#0C447C' },
-  delivered: { bg: '#EAF3DE', text: '#27500A' },
-  invoice_uploaded: { bg: '#EAF3DE', text: '#27500A' },
-  rejected: { bg: '#FCEBEB', text: '#791F1F' },
-  auto_cancelled: { bg: '#FCEBEB', text: '#791F1F' }
+const STATUS = {
+  pending: { label: 'Pending', class: 'chip-pending' },
+  accepted: { label: 'Accepted', class: 'chip-accepted' },
+  rejected: { label: 'Rejected', class: 'chip-rejected' },
+  dispatched: { label: 'Dispatched', class: 'chip-dispatched' },
+  delivered: { label: 'Delivered', class: 'chip-delivered' },
+  packing: { label: 'Packing', class: 'chip-dispatched' },
 };
 
 export default function Orders() {
-  const [orders, setOrders] = useState([]);
-  const [filter, setFilter] = useState('pending');
+  const [subOrders, setSubOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [driverMobile, setDriverMobile] = useState({});
-  const [vehicleNo, setVehicleNo] = useState({});
+  const [filter, setFilter] = useState('pending');
 
   useEffect(() => { loadOrders(); }, []);
 
   const loadOrders = async () => {
     try {
       const res = await api.get('/orders/pending');
-      setOrders(res.data.sub_orders);
+      setSubOrders(res.data.sub_orders || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -32,140 +28,110 @@ export default function Orders() {
     }
   };
 
-  const acceptOrder = async (id) => {
+  const acceptOrder = async (subOrderId) => {
     try {
-      await api.put(`/orders/${id}/accept`);
+      await api.put(`/orders/${subOrderId}/accept`);
       loadOrders();
     } catch (err) {
-      alert('Failed to accept');
+      alert('Failed to accept order');
     }
   };
 
-  const rejectOrder = async (id) => {
+  const rejectOrder = async (subOrderId) => {
     if (!confirm('Reject this order?')) return;
     try {
-      await api.put(`/orders/${id}/reject`, { reason: 'Out of stock' });
+      await api.put(`/orders/${subOrderId}/reject`, { reason: 'Out of stock' });
       loadOrders();
     } catch (err) {
       alert('Failed to reject');
     }
   };
 
-  const assignDriver = async (subOrderId) => {
-    const mobile = driverMobile[subOrderId];
-    const vehicle = vehicleNo[subOrderId];
-    if (!mobile || !vehicle) {
-      alert('Enter driver mobile and vehicle number');
-      return;
-    }
-    try {
-      const driverRes = await api.get(`/users/by-mobile/${mobile}`);
-      await api.post('/delivery/assign', {
-        sub_order_id: subOrderId,
-        driver_id: driverRes.data.user.user_id,
-        vehicle_number: vehicle,
-        vehicle_type: 'Mini truck'
-      });
-      alert('Driver assigned successfully');
-      loadOrders();
-    } catch (err) {
-      alert(err.response?.data?.error || 'Failed to assign driver');
-    }
-  };
-
-  if (loading) return <p>Loading...</p>;
-
   return (
-    <div>
-      <div style={styles.header}>
-        <h2 style={styles.title}>Orders</h2>
-        <div style={styles.filters}>
-          {['pending', 'accepted', 'dispatched', 'delivered'].map(s => (
-            <button key={s}
-              style={{ ...styles.filterBtn, background: filter === s ? '#0F6E56' : '#fff', color: filter === s ? '#fff' : '#333' }}
-              onClick={() => setFilter(s)}>
-              {s.charAt(0).toUpperCase() + s.slice(1)}
-            </button>
-          ))}
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+
+      {/* TOP BAR */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid #2C2C2E', flexShrink: 0 }}>
+        <div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>Orders</div>
+          <div style={{ fontSize: 10, color: '#8E8E93', marginTop: 1 }}>{subOrders.length} pending orders</div>
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button className="btn-secondary" onClick={loadOrders}>↻ Refresh</button>
         </div>
       </div>
 
-      {orders.length === 0 ? (
-        <div style={styles.empty}>
-          <p>No {filter} orders</p>
-        </div>
-      ) : (
-        orders.map(order => (
-          <div key={order.sub_order_id} style={styles.card}>
-            <div style={styles.cardHeader}>
-              <div>
-                <p style={styles.retailer}>{order.retailer_name} — {order.retailer_mobile}</p>
-                <p style={styles.address}>{order.retailer_address}</p>
-              </div>
-              <div style={styles.cardRight}>
-                <p style={styles.amount}>₹{parseFloat(order.total_amount).toLocaleString('en-IN')}</p>
-                <span style={{ background: STATUS_COLORS[order.status]?.bg, color: STATUS_COLORS[order.status]?.text, padding: '2px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
-                  {order.status.replace(/_/g, ' ')}
-                </span>
-              </div>
-            </div>
+      {/* FILTER TABS */}
+      <div style={{ display: 'flex', gap: 6, padding: '10px 16px', borderBottom: '1px solid #2C2C2E', flexShrink: 0 }}>
+        {['pending', 'accepted', 'all'].map(f => (
+          <button key={f} onClick={() => setFilter(f)} style={{
+            background: filter === f ? '#185FA5' : '#2C2C2E',
+            color: filter === f ? '#fff' : '#8E8E93',
+            border: 'none', borderRadius: 8, padding: '6px 14px',
+            fontSize: 11, fontWeight: 500, cursor: 'pointer',
+            textTransform: 'capitalize'
+          }}>
+            {f === 'all' ? 'All orders' : f}
+          </button>
+        ))}
+      </div>
 
-            {order.items?.map(item => (
-              <div key={item.item_id} style={styles.itemRow}>
-                <span>{item.generic_name} — {item.brand_name}</span>
-                <span style={{ color: '#666' }}>Qty: {item.quantity} × ₹{item.unit_price} = ₹{(item.quantity * item.unit_price).toLocaleString('en-IN')}</span>
-              </div>
-            ))}
+      {/* ORDER LIST */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: 14 }}>
+        {loading ? (
+          <div style={{ color: '#8E8E93', textAlign: 'center', padding: 40 }}>Loading...</div>
+        ) : subOrders.length === 0 ? (
+          <div style={{ color: '#8E8E93', textAlign: 'center', padding: 40 }}>
+            <div style={{ fontSize: 32, marginBottom: 8 }}>📦</div>
+            <div>No pending orders</div>
+          </div>
+        ) : (
+          subOrders.map(order => (
+            <div key={order.sub_order_id} className="card" style={{ marginBottom: 10 }}>
 
-            {order.status === 'pending' && (
-              <div style={styles.actions}>
-                <button style={styles.acceptBtn} onClick={() => acceptOrder(order.sub_order_id)}>✓ Accept</button>
-                <button style={styles.rejectBtn} onClick={() => rejectOrder(order.sub_order_id)}>✗ Reject</button>
-              </div>
-            )}
-
-            {order.status === 'accepted' && (
-              <div style={styles.assignBox}>
-                <p style={styles.assignTitle}>Assign Driver</p>
-                <div style={styles.assignRow}>
-                  <input style={styles.assignInput} placeholder="Driver mobile"
-                    value={driverMobile[order.sub_order_id] || ''}
-                    onChange={e => setDriverMobile(prev => ({ ...prev, [order.sub_order_id]: e.target.value }))} />
-                  <input style={styles.assignInput} placeholder="Vehicle number"
-                    value={vehicleNo[order.sub_order_id] || ''}
-                    onChange={e => setVehicleNo(prev => ({ ...prev, [order.sub_order_id]: e.target.value }))} />
-                  <button style={styles.assignBtn} onClick={() => assignDriver(order.sub_order_id)}>
-                    Assign
-                  </button>
+              {/* Order header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>{order.retailer_name}</div>
+                  <div style={{ fontSize: 10, color: '#0A84FF', marginTop: 1 }}>{order.retailer_mobile}</div>
+                  <div style={{ fontSize: 10, color: '#8E8E93', marginTop: 1 }}>{order.retailer_address}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: '#F2C94C' }}>
+                    ₹{parseFloat(order.total_amount).toLocaleString('en-IN')}
+                  </div>
+                  <div style={{ fontSize: 9, color: '#FF453A', marginTop: 2 }}>
+                    Auto-cancels {new Date(order.auto_cancel_at).toLocaleTimeString('en-IN')}
+                  </div>
                 </div>
               </div>
-            )}
-          </div>
-        ))
-      )}
+
+              {/* Items */}
+              <div style={{ background: '#3A3A3C', borderRadius: 8, padding: 10, marginBottom: 10 }}>
+                {order.items?.map(item => (
+                  <div key={item.item_id} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #2C2C2E', fontSize: 11 }}>
+                    <span style={{ color: '#fff' }}>{item.generic_name} — {item.brand_name}</span>
+                    <span style={{ color: '#8E8E93' }}>×{item.quantity} · ₹{item.unit_price}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Actions */}
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => acceptOrder(order.sub_order_id)} style={{ flex: 1, background: '#003A10', color: '#30D158', border: '1px solid #1D9E75', borderRadius: 8, padding: '9px 0', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                  ✓ Accept Order
+                </button>
+                <button onClick={() => rejectOrder(order.sub_order_id)} style={{ background: '#2A0A0A', color: '#FF453A', border: '1px solid #FF453A', borderRadius: 8, padding: '9px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                  ✗ Reject
+                </button>
+                <button onClick={() => window.location.href='/bulk-upload'} style={{ background: '#0A1F35', color: '#0A84FF', border: '1px solid #185FA5', borderRadius: 8, padding: '9px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                  🚚 Assign
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }
-
-const styles = {
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 },
-  title: { fontSize: 22, fontWeight: 600, color: '#333', margin: 0 },
-  filters: { display: 'flex', gap: 6 },
-  filterBtn: { border: '1px solid #ddd', borderRadius: 20, padding: '6px 14px', fontSize: 13, cursor: 'pointer', fontWeight: 500 },
-  empty: { background: '#fff', borderRadius: 12, padding: 40, textAlign: 'center', color: '#888' },
-  card: { background: '#fff', borderRadius: 12, padding: 20, marginBottom: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' },
-  cardHeader: { display: 'flex', justifyContent: 'space-between', marginBottom: 12 },
-  retailer: { fontSize: 15, fontWeight: 600, margin: '0 0 4px' },
-  address: { fontSize: 12, color: '#888', margin: 0 },
-  cardRight: { textAlign: 'right' },
-  amount: { fontSize: 20, fontWeight: 700, color: '#0F6E56', margin: '0 0 6px' },
-  itemRow: { display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderTop: '1px solid #f0f0f0', fontSize: 14 },
-  actions: { display: 'flex', gap: 10, marginTop: 14 },
-  acceptBtn: { flex: 1, background: '#0F6E56', color: '#fff', border: 'none', borderRadius: 8, padding: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer' },
-  rejectBtn: { background: '#FCEBEB', color: '#791F1F', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer' },
-  assignBox: { marginTop: 14, padding: 14, background: '#f9f9f9', borderRadius: 8 },
-  assignTitle: { fontSize: 13, fontWeight: 600, color: '#333', margin: '0 0 8px' },
-  assignRow: { display: 'flex', gap: 8 },
-  assignInput: { flex: 1, border: '1px solid #ddd', borderRadius: 6, padding: '8px 10px', fontSize: 13, outline: 'none' },
-  assignBtn: { background: '#0F6E56', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }
-};
