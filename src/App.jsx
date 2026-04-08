@@ -2,8 +2,9 @@ import { BrowserRouter, Routes, Route, Navigate, NavLink } from 'react-router-do
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
-import Inventory from './pages/Inventory';
 import Orders from './pages/Orders';
+import Inventory from './pages/Inventory';
+import BulkUpload from './pages/BulkUpload';
 
 function Layout({ children }) {
   const { user, logout } = useAuth();
@@ -16,7 +17,8 @@ function Layout({ children }) {
           {[
             { to: '/', label: '📊 Dashboard' },
             { to: '/orders', label: '📦 Orders' },
-            { to: '/inventory', label: '🏷️ Inventory' },
+            { to: '/inventory', label: '🏷 Inventory' },
+            { to: '/bulk-upload', label: '📤 Bulk Upload' },
           ].map(({ to, label }) => (
             <NavLink key={to} to={to} end={to === '/'} style={({ isActive }) => ({
               ...styles.navLink, background: isActive ? '#085041' : 'transparent'
@@ -52,6 +54,7 @@ export default function App() {
           <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
           <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
+          <Route path="/bulk-upload" element={<ProtectedRoute><BulkUpload /></ProtectedRoute>} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

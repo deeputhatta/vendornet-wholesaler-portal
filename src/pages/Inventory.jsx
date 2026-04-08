@@ -6,6 +6,7 @@ export default function Inventory() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState({});
   const [saving, setSaving] = useState(null);
+  const [deleting, setDeleting] = useState(null);
 
   useEffect(() => { loadListings(); }, []);
 
@@ -59,6 +60,19 @@ export default function Inventory() {
     });
   };
 
+  const deleteListing = async (listingId, productName) => {
+    if (!confirm(`Delete listing for ${productName}? This cannot be undone.`)) return;
+    setDeleting(listingId);
+    try {
+      await api.delete(`/listings/${listingId}`);
+      setListings(prev => prev.filter(l => l.listing_id !== listingId));
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to delete listing');
+    } finally {
+      setDeleting(null);
+    }
+  };
+
   if (loading) return <p>Loading...</p>;
 
   return (
@@ -76,7 +90,7 @@ export default function Inventory() {
           <span style={{ flex: 1 }}>Stock</span>
           <span style={{ flex: 1 }}>Days</span>
           <span style={{ flex: 1 }}>Status</span>
-          <span style={{ flex: 1 }}>Action</span>
+          <span style={{ flex: 2 }}>Actions</span>
         </div>
 
         {listings.map(listing => {
@@ -136,11 +150,11 @@ export default function Inventory() {
                       <option value="false">Inactive</option>
                     </select>
                   </span>
-                  <span style={{ flex: 1 }}>
+                  <span style={{ flex: 2, display: 'flex', gap: 4 }}>
                     <button style={styles.saveBtn} onClick={() => saveEdit(listing.listing_id)} disabled={saving === listing.listing_id}>
                       {saving === listing.listing_id ? '...' : 'Save'}
                     </button>
-                    <button style={styles.cancelBtn} onClick={() => cancelEdit(listing.listing_id)}>✗</button>
+                    <button style={styles.cancelBtn} onClick={() => cancelEdit(listing.listing_id)}>Cancel</button>
                   </span>
                 </>
               ) : (
@@ -157,14 +171,27 @@ export default function Inventory() {
                       {listing.is_active ? 'Active' : 'Off'}
                     </span>
                   </span>
-                  <span style={{ flex: 1 }}>
+                  <span style={{ flex: 2, display: 'flex', gap: 4 }}>
                     <button style={styles.editBtn} onClick={() => startEdit(listing)}>Edit</button>
+                    <button
+                      style={styles.deleteBtn}
+                      onClick={() => deleteListing(listing.listing_id, listing.generic_name)}
+                      disabled={deleting === listing.listing_id}
+                    >
+                      {deleting === listing.listing_id ? '...' : 'Delete'}
+                    </button>
                   </span>
                 </>
               )}
             </div>
           );
         })}
+
+        {listings.length === 0 && (
+          <div style={styles.empty}>
+            <p>No listings yet. Use Bulk Upload to add your price list.</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -181,6 +208,8 @@ const styles = {
   attrs: { fontSize: 11, color: '#888', margin: 0 },
   editInput: { width: '90%', border: '1px solid #ddd', borderRadius: 6, padding: '4px 8px', fontSize: 13, outline: 'none' },
   editBtn: { background: '#E6F1FB', color: '#0C447C', border: 'none', borderRadius: 6, padding: '4px 10px', fontSize: 12, cursor: 'pointer', fontWeight: 600 },
-  saveBtn: { background: '#0F6E56', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 10px', fontSize: 12, cursor: 'pointer', fontWeight: 600, marginRight: 4 },
-  cancelBtn: { background: '#FCEBEB', color: '#791F1F', border: 'none', borderRadius: 6, padding: '4px 8px', fontSize: 12, cursor: 'pointer' }
+  deleteBtn: { background: '#FCEBEB', color: '#791F1F', border: 'none', borderRadius: 6, padding: '4px 10px', fontSize: 12, cursor: 'pointer', fontWeight: 600 },
+  saveBtn: { background: '#0F6E56', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 10px', fontSize: 12, cursor: 'pointer', fontWeight: 600 },
+  cancelBtn: { background: '#f5f5f5', color: '#333', border: '1px solid #ddd', borderRadius: 6, padding: '4px 10px', fontSize: 12, cursor: 'pointer' },
+  empty: { padding: 24, textAlign: 'center', color: '#888', fontSize: 14 }
 };
