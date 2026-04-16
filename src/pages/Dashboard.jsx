@@ -81,7 +81,7 @@ export default function Dashboard() {
 
         {/* OFFER BANNER */}
         <div className="offer-banner" style={{ marginBottom: 12 }}>
-          <div style={{ position: 'relative' }}>
+          <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
               <span style={{ background: '#F2C94C', color: '#000', fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 6 }}>OFFER</span>
               <span style={{ fontSize: 9, color: '#378ADD' }}>Limited time</span>
@@ -125,7 +125,7 @@ export default function Dashboard() {
         </div>
 
         {/* CHARTS ROW */}
-        <div className="two-col" style={{ marginBottom: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 8, marginBottom: 12 }}>
           <div className="card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <div className="section-title" style={{ marginBottom: 0 }}>Revenue trend</div>
@@ -164,8 +164,8 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* PENDING ORDERS + TOP PRODUCTS */}
-        <div className="two-col" style={{ marginBottom: 12 }}>
+        {/* PENDING ORDERS + TOP LISTINGS */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 8, marginBottom: 12 }}>
           <div className="card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
               <div className="section-title" style={{ marginBottom: 0 }}>Pending orders</div>
@@ -200,18 +200,22 @@ export default function Dashboard() {
               <div className="section-title" style={{ marginBottom: 0 }}>Top listings</div>
               <button className="btn-ghost" onClick={() => window.location.href = '/inventory'}>Manage</button>
             </div>
-            {listings.slice(0, 3).map((l, i) => (
-              <div key={l.listing_id} style={{ borderBottom: i < 2 ? '1px solid #3A3A3C' : 'none', paddingBottom: 8, marginBottom: 8 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                  <div style={{ fontSize: 11, color: '#fff', fontWeight: 500 }}>{l.brand_name} {l.generic_name}</div>
-                  <div style={{ fontSize: 11, color: '#0A84FF', fontWeight: 600 }}>₹{l.price}</div>
+            {listings.length === 0 ? (
+              <div style={{ color: '#8E8E93', fontSize: 12, textAlign: 'center', padding: '20px 0' }}>No listings yet</div>
+            ) : (
+              listings.slice(0, 3).map((l, i) => (
+                <div key={l.listing_id} style={{ borderBottom: i < 2 ? '1px solid #3A3A3C' : 'none', paddingBottom: 8, marginBottom: 8 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                    <div style={{ fontSize: 11, color: '#fff', fontWeight: 500 }}>{l.brand_name} {l.generic_name}</div>
+                    <div style={{ fontSize: 11, color: '#0A84FF', fontWeight: 600 }}>₹{l.price}</div>
+                  </div>
+                  <div className="bar-track" style={{ marginBottom: 3 }}>
+                    <div className="bar-fill" style={{ width: Math.min(100, (l.stock_qty / 500) * 100) + '%', background: l.stock_qty < 10 ? '#FF9500' : '#30D158' }}></div>
+                  </div>
+                  <div style={{ fontSize: 9, color: l.stock_qty < 10 ? '#FF9500' : '#8E8E93' }}>Stock: {l.stock_qty} · MOQ: {l.min_order_qty}</div>
                 </div>
-                <div className="bar-track" style={{ marginBottom: 3 }}>
-                  <div className="bar-fill" style={{ width: Math.min(100, (l.stock_qty / 500) * 100) + '%', background: l.stock_qty < 10 ? '#FF9500' : '#30D158' }}></div>
-                </div>
-                <div style={{ fontSize: 9, color: l.stock_qty < 10 ? '#FF9500' : '#8E8E93' }}>Stock: {l.stock_qty} · MOQ: {l.min_order_qty}</div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
