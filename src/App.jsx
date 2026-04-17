@@ -9,14 +9,16 @@ import BulkUpload from './pages/BulkUpload';
 import Invoices from './pages/Invoices';
 import Staff from './pages/Staff';
 import Reports from './pages/Reports';
+import RequestProduct from './pages/RequestProduct';
 import { useState, useEffect } from 'react';
 
 const NAV_ITEMS = [
   { to: '/',           label: 'Dashboard',  icon: '📊', bg: '#185FA5', section: 'main' },
   { to: '/orders',     label: 'Orders',     icon: '📦', bg: '#FF9500', section: 'main' },
   { to: '/inventory',  label: 'Inventory',  icon: '🏷', bg: '#34C759', section: 'main' },
-  { to: '/bulk-upload',label: 'Bulk Upload',icon: '📤', bg: '#5856D6', section: 'main' },
-  { to: '/invoices',   label: 'Invoices',   icon: '🧾', bg: '#FF2D55', section: 'main' },
+  { to: '/bulk-upload',    label: 'Bulk Upload',    icon: '📤', bg: '#5856D6', section: 'main' },
+  { to: '/request-product',label: 'Request Product', icon: '🆕', bg: '#BF5AF2', section: 'main' },
+  { to: '/invoices',       label: 'Invoices',        icon: '🧾', bg: '#FF2D55', section: 'main' },
   { to: '/staff',      label: 'Staff',      icon: '👥', bg: '#30B0C7', section: 'main' },
   { to: '/reports',    label: 'Reports',    icon: '📈', bg: '#64D2FF', section: 'analytics' },
 ];
@@ -148,6 +150,7 @@ export default function App() {
           <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
           <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
           <Route path="/bulk-upload" element={<ProtectedRoute><BulkUpload /></ProtectedRoute>} />
+          <Route path="/request-product" element={<ProtectedRoute><RequestProduct /></ProtectedRoute>} />
           <Route path="/invoices" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
           <Route path="/staff" element={<ProtectedRoute><Staff /></ProtectedRoute>} />
           <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
