@@ -15,7 +15,7 @@ export default function Invoices() {
     setLoading(true);
     try {
       const [ordersRes, invoicesRes] = await Promise.all([
-        api.get('/orders/my'),
+        api.get('/orders/wholesaler/all?limit=500'),
         api.get('/invoices/my').catch(() => ({ data: { invoices: [] } })),
       ]);
       const dispatched = (ordersRes.data.sub_orders || []).filter(o =>
@@ -35,7 +35,7 @@ export default function Invoices() {
       const formData = new FormData();
       formData.append('invoice', file);
       formData.append('sub_order_id', subOrderId);
-      await api.post('/invoices/upload', formData, {
+      await api.post('/invoices', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       alert('Invoice uploaded successfully!');
